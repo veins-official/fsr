@@ -6,16 +6,17 @@
 
 #define DOUBLE_EPSILON 1e-9
 
-typedef struct {
+struct Matrix {
   double** data;
   int rows;
   int cols;
-} Matrix;
+};
 
 static inline int double_is_zero(double x);
 static inline int double_eq(double a, double b);
 static MatrixError check_matrix_exists(const Matrix* matrix);
 static MatrixError check_indices(const Matrix* matrix, int row, int col);
+static MatrixError check_row_index(const Matrix* matrix, int row);
 static MatrixError gauss_forward(Matrix* matrix, double* det, int* sign);
 static MatrixError determinant_square(const Matrix* matrix, double* result);
 
@@ -36,6 +37,11 @@ static MatrixError check_matrix_exists(const Matrix* matrix) {
 static MatrixError check_indices(const Matrix* matrix, int row, int col) {
   if (row < 0 || row >= matrix->rows) return MATRIX_INDEX_ERROR;
   if (col < 0 || col >= matrix->cols) return MATRIX_INDEX_ERROR;
+  return MATRIX_SUCCESS;
+}
+
+static MatrixError check_row_index(const Matrix* matrix, int row) {
+  if (row < 0 || row >= matrix->rows) return MATRIX_INDEX_ERROR;
   return MATRIX_SUCCESS;
 }
 
@@ -71,14 +77,13 @@ static MatrixError gauss_forward(Matrix* matrix, double* det, int* sign) {
 }
 
 static MatrixError determinant_square(const Matrix* matrix, double* result) {
-  const int n = matrix->rows;
-  
   Matrix* temp = NULL;
+  double det;
+  int sign;
+  
   MatrixError status = matrix_copy(matrix, &temp);
   if (status != MATRIX_SUCCESS) return status;
   
-  double det;
-  int sign;
   status = gauss_forward(temp, &det, &sign);
   
   if (status == MATRIX_SUCCESS) {
@@ -109,7 +114,7 @@ MatrixError matrix_create(Matrix** matrix, int rows, int cols) {
   }
 
   for (int i = 0; i < rows; i++) {
-    (*matrix)->data[i] = (double*)malloc(cols, sizeof(double));
+    (*matrix)->data[i] = (double*)malloc(cols * sizeof(double));
     if (!(*matrix)->data[i]) {
       for (int j = 0; j < i; j++) {
         free((*matrix)->data[j]);
@@ -240,7 +245,10 @@ MatrixError matrix_copy(const Matrix* const source, Matrix** const destination) 
 }
 
 MatrixError matrix_swap_rows(Matrix* matrix, int row1, int row2) {
-  MatrixError status = check_matrix_exists(matrix);
+  MatrixError status;
+  double* temp;
+  
+  status = check_matrix_exists(matrix);
   if (status != MATRIX_SUCCESS) return status;
   
   status = check_row_index(matrix, row1);
@@ -251,7 +259,7 @@ MatrixError matrix_swap_rows(Matrix* matrix, int row1, int row2) {
   
   if (row1 == row2) return MATRIX_SUCCESS;
   
-  double* temp = matrix->data[row1];
+  temp = matrix->data[row1];
   matrix->data[row1] = matrix->data[row2];
   matrix->data[row2] = temp;
   
@@ -314,13 +322,16 @@ MatrixError matrix_find_nonzero_in_col(const Matrix* matrix, int start_row, int 
 }
 
 MatrixError matrix_normalize_row(Matrix* matrix, int row, int pivot_col) {
-  MatrixError status = check_matrix_exists(matrix);
+  MatrixError status;
+  double pivot;
+  
+  status = check_matrix_exists(matrix);
   if (status != MATRIX_SUCCESS) return status;
   
   status = check_indices(matrix, row, pivot_col);
   if (status != MATRIX_SUCCESS) return status;
   
-  double pivot = matrix->data[row][pivot_col];
+  pivot = matrix->data[row][pivot_col];
   if (double_is_zero(pivot)) {
     return MATRIX_SINGULAR;
   }
@@ -331,13 +342,16 @@ MatrixError matrix_normalize_row(Matrix* matrix, int row, int pivot_col) {
 }
 
 MatrixError matrix_eliminate_below(Matrix* matrix, int pivot_row, int pivot_col) {
-  MatrixError status = check_matrix_exists(matrix);
+  MatrixError status;
+  double pivot;
+  
+  status = check_matrix_exists(matrix);
   if (status != MATRIX_SUCCESS) return status;
   
   status = check_indices(matrix, pivot_row, pivot_col);
   if (status != MATRIX_SUCCESS) return status;
   
-  double pivot = matrix->data[pivot_row][pivot_col];
+  pivot = matrix->data[pivot_row][pivot_col];
   if (double_is_zero(pivot)) {
     return MATRIX_SINGULAR;
   }
