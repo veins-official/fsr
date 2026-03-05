@@ -11,7 +11,7 @@ all: main.out
 
 main.out: main.o libmatc.o
 
-main.o: main.c dijkstra_algorithm.h
+main.o: main.c libmatc.h
 libmatc.o: libmatc.c libmatc.h
 
 clean:
