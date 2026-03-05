@@ -164,3 +164,19 @@ MatrixError matrix_print(const Matrix* matrix) {
   return MATRIX_SUCCESS;
 }
 
+MatrixError matrix_copy(const Matrix* const source, Matrix** const destination) {
+  MatrixError status = check_matrix_exists(source);
+  if (status != MATRIX_SUCCESS) return status;
+  
+  if (!destination) return MATRIX_NULL_POINTER;
+  
+  status = matrix_create(destination, source->rows, source->cols);
+  if (status != DET_SUCCESS) return status;
+  
+  for (int i = 0; i < source->rows; i++) {
+    memcpy((*destination)->data[i], source->data[i], source->cols * sizeof(double));
+  }
+  
+  return MATRIX_SUCCESS;
+}
+
