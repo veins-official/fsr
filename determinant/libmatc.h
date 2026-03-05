@@ -5,9 +5,12 @@
 
 typedef enum {
   MATRIX_SUCCESS      = 0,
-  MATRIX_INVALID_SIZE = 1,
+  MATRIX_NULL_POINTER = 1,
   MATRIX_MEMORY_ERROR = 2,
-  MATRIX_READ_ERROR   = 3
+  MATRIX_READ_ERROR   = 3,
+  MATRIX_INDEX_ERROR  = 4,
+  MATRIX_INVALID_SIZE = 5,
+  
 } MatrixError;
 
 typedef struct Matrix Matrix;
