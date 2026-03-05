@@ -149,3 +149,18 @@ MatrixError matrix_read(Matrix* matrix, FILE* stream) {
   return MATRIX_SUCCESS;
 }
 
+MatrixError matrix_print(const Matrix* matrix) {
+  MatrixError status = check_matrix_exists(matrix);
+  if (status != MATRIX_SUCCESS) return status;
+  
+  printf("Matrix %dx%d:\n", matrix->rows, matrix->cols);
+  for (int i = 0; i < matrix->rows; i++) {
+    for (int j = 0; j < matrix->cols; j++) {
+      printf("%6.2f ", matrix->data[i][j]);
+    }
+    printf("\n");
+  }
+  
+  return MATRIX_SUCCESS;
+}
+
