@@ -22,5 +22,14 @@ MatrixError matrix_is_square(const Matrix* const matrix, int* const result);
 MatrixError matrix_set(Matrix* const matrix, const int row, const int col, const double value);
 MatrixError matrix_get(const Matrix* const matrix, const int row, const int col, double* const value);
 
+MatrixError matrix_read(Matrix* const matrix, FILE* const stream);
+MatrixError matrix_print(const Matrix* const matrix);
+
+MatrixError matrix_determinant(const Matrix* const matrix, double* const result);
+
+MatrixError matrix_copy(const Matrix* const source, Matrix** const destination);
+
+const char* det_status_string(const MatrixError error);
+
 #endif
 
