@@ -1,15 +1,15 @@
-#include "libmatc.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include "libmatc.h"
 
-int main(void) {
+int main(int argc, char* argv[]) {
   Matrix* matrix = NULL;
   MatrixError status;
   int rows, cols;
   double det;
   
-  if (scanf("%d %d", &rows, &cols) != 2) {
-    printf("Usage: rows cols\n");
+  if (argc != 3 || sscanf(argv[1], "%d", &rows) != 1 || sscanf(argv[2], "%d", &cols) != 1) {
+    printf("Usage: %s rows cols\n", argv[0]);
     return 1;
   }
   
@@ -41,3 +41,4 @@ int main(void) {
 
   return 0;
 }
+
