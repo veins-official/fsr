@@ -365,3 +365,17 @@ MatrixError matrix_determinant(const Matrix* matrix, double* result) {
   return determinant_square(matrix, result);
 }
 
+const char* matrix_status_string(MatrixError status) {
+  switch(status) {
+    case MATRIX_SUCCESS:      return "Success";
+    case MATRIX_NULL_POINTER: return "NULL pointer";
+    case MATRIX_MEMORY_ERROR: return "Memory error";
+    case MATRIX_READ_ERROR:   return "Reading error";
+    case MATRIX_INDEX_ERROR:  return "Index out of range";
+    case MATRIX_INVALID_SIZE: return "Wrong size";
+    case MATRIX_SINGULAR:     return "Singular matrix";
+    case MATRIX_NOT_SQUARE:   return "Not square";
+    default:                  return "Unknown error";
+  }
+}
+
