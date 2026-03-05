@@ -51,3 +51,19 @@ MatrixError matrix_create(Matrix** matrix, int rows, int cols) {
   return MATRIX_SUCCESS;
 }
 
+MatrixError matrix_free(Matrix** matrix) {
+  if (!matrix || !(*matrix)) return MATRIX_SUCCESS;
+
+  if ((*matrix)->data) {
+    for (int i = 0; i < (*matrix)->rows; i++) {
+      free((*matrix)->data[i]);
+    }
+    free((*matrix)->data);
+  }
+
+  free(*matrix);
+  *matrix = NULL;
+
+  return MATRIX_SUCCESS;
+}
+
