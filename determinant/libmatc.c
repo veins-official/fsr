@@ -12,7 +12,21 @@ typedef struct {
   int cols;
 } Matrix;
 
+static MatrixError check_matrix_exists(const Matrix* matrix);
+static MatrixError check_indices(const Matrix* matrix, int row, int col);
 static inline int double_eq(double a, double b);
+
+static MatrixError check_matrix_exists(const Matrix* matrix) {
+  if (!matrix) return MATRIX_NULL_POINTER;
+  if (!matrix->data) return MATRIX_MEMORY_ERROR;
+  return MATRIX_SUCCESS;
+}
+
+static MatrixError check_indices(const Matrix* matrix, int row, int col) {
+  if (row < 0 || row >= matrix->rows) return MATRIX_INDEX_ERROR;
+  if (col < 0 || col >= matrix->cols) return MATRIX_INDEX_ERROR;
+  return MATRIX_SUCCESS;
+}
 
 static inline int double_eq(double a, double b) {
   return fabs(a - b) <= fmax(fabs(a), fabs(b)) * DOUBLE_EPSILON;
@@ -68,9 +82,8 @@ MatrixError matrix_free(Matrix** matrix) {
 }
 
 MatrixError matrix_get_rows(const Matrix* matrix, int* rows) {
-  if (!matrix) return MATRIX_NULL_POINTER;
-  if (!matrix->data) return MATRIX_MEMORY_ERROR;
-  if (matrix->rows <= 0) return MATRIX_INVALID_SIZE;
+  MatrixError status = check_matrix_exists(matrix);
+  if (status != MATRIX_SUCCESS) return status;
   if (!rows) return MATRIX_NULL_POINTER;
 
   *rows = matrix->rows;
@@ -78,9 +91,8 @@ MatrixError matrix_get_rows(const Matrix* matrix, int* rows) {
 }
 
 MatrixError matrix_get_cols(const Matrix* matrix, int* cols) {
-  if (!matrix) return MATRIX_NULL_POINTER;
-  if (!matrix->data) return MATRIX_MEMORY_ERROR;
-  if (matrix->cols <= 0) return MATRIX_INVALID_SIZE;
+  MatrixError status = check_matrix_exists(matrix);
+  if (status != MATRIX_SUCCESS) return status;
   if (!cols) return MATRIX_NULL_POINTER;
 
   *cols = matrix->cols;
@@ -88,9 +100,8 @@ MatrixError matrix_get_cols(const Matrix* matrix, int* cols) {
 }
 
 MatrixError matrix_is_square(const Matrix* matrix, int* result) {
-  if (!matrix) return MATRIX_NULL_POINTER;
-  if (!matrix->data) return MATRIX_MEMORY_ERROR;
-  if (matrix->rows <= 0 || matrix->cols <= 0) return MATRIX_INVALID_SIZE;
+  MatrixError status = check_matrix_exists(matrix);
+  if (status != MATRIX_SUCCESS) return status;
   if (!result) return MATRIX_NULL_POINTER;
 
   *result = (matrix->rows == matrix->cols);
@@ -98,25 +109,43 @@ MatrixError matrix_is_square(const Matrix* matrix, int* result) {
 }
 
 MatrixError matrix_set(Matrix* matrix, int row, int col, double value) {
-  if (!matrix) return MATRIX_NULL_POINTER;
-  if (!matrix->data) return MATRIX_MEMORY_ERROR;
-  if (row < 0 || row >= matrix->rows || col < 0 || col >= matrix->cols) {
-    return MATRIX_INDEX_ERROR;
-  }
+  MatrixError status = check_matrix_exists(matrix);
+  if (status != MATRIX_SUCCESS) return status;
+  
+  status = check_indices(matrix, row, col);
+  if (status != MATRIX_SUCCESS) return status;
   
   matrix->data[row][col] = value;
   return MATRIX_SUCCESS;
 }
 
 MatrixError matrix_get(const Matrix* matrix, int row, int col, double* value) {
-  if (!matrix) return MATRIX_NULL_POINTER;
-  if (!matrix->data) return MATRIX_MEMORY_ERROR;
-  if (row < 0 || row >= matrix->rows || col < 0 || col >= matrix->cols) {
-    return MATRIX_INDEX_ERROR;
-  }
+  MatrixError status = check_matrix_exists(matrix);
+  if (status != MATRIX_SUCCESS) return status;
+  
+  status = check_indices(matrix, row, col);
+  if (status != MATRIX_SUCCESS) return status;
+  
   if (!value) return MATRIX_NULL_POINTER;
   
   *value = matrix->data[row][col];
+  return MATRIX_SUCCESS;
+}
+
+MatrixError matrix_read(Matrix* matrix, FILE* stream) {
+  MatrixError status = check_matrix_exists(matrix);
+  if (status != MATRIX_SUCCESS) return status;
+  
+  if (!stream) return MATRIX_NULL_POINTER;
+  
+  for (int i = 0; i < matrix->rows; i++) {
+    for (int j = 0; j < matrix->cols; j++) {
+      if (fscanf(stream, "%lf", &matrix->data[i][j]) != 1) {
+        return MATRIX_READ_ERROR;
+      }
+    }
+  }
+  
   return MATRIX_SUCCESS;
 }
 
