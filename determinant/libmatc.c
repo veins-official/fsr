@@ -108,3 +108,15 @@ MatrixError matrix_set(Matrix* matrix, int row, int col, double value) {
   return MATRIX_SUCCESS;
 }
 
+MatrixError matrix_get(const Matrix* matrix, int row, int col, double* value) {
+  if (!matrix) return MATRIX_NULL_POINTER;
+  if (!matrix->data) return MATRIX_MEMORY_ERROR;
+  if (row < 0 || row >= matrix->rows || col < 0 || col >= matrix->cols) {
+    return MATRIX_INDEX_ERROR;
+  }
+  if (!value) return MATRIX_NULL_POINTER;
+  
+  *value = matrix->data[row][col];
+  return MATRIX_SUCCESS;
+}
+
