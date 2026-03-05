@@ -97,3 +97,14 @@ MatrixError matrix_is_square(const Matrix* matrix, int* result) {
   return MATRIX_SUCCESS;
 }
 
+MatrixError matrix_set(Matrix* matrix, int row, int col, double value) {
+  if (!matrix) return MATRIX_NULL_POINTER;
+  if (!matrix->data) return MATRIX_MEMORY_ERROR;
+  if (row < 0 || row >= matrix->rows || col < 0 || col >= matrix->cols) {
+    return MATRIX_INDEX_ERROR;
+  }
+  
+  matrix->data[row][col] = value;
+  return MATRIX_SUCCESS;
+}
+
