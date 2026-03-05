@@ -12,9 +12,18 @@ typedef struct {
   int cols;
 } Matrix;
 
+static inline int double_is_zero(double x);
+static inline int double_eq(double a, double b);
 static MatrixError check_matrix_exists(const Matrix* matrix);
 static MatrixError check_indices(const Matrix* matrix, int row, int col);
-static inline int double_eq(double a, double b);
+
+static inline int double_is_zero(double x) {
+  return fabs(x) <= DOUBLE_EPSILON;
+}
+
+static inline int double_eq(double a, double b) {
+  return fabs(a - b) <= fmax(fabs(a), fabs(b)) * DOUBLE_EPSILON;
+}
 
 static MatrixError check_matrix_exists(const Matrix* matrix) {
   if (!matrix) return MATRIX_NULL_POINTER;
@@ -26,10 +35,6 @@ static MatrixError check_indices(const Matrix* matrix, int row, int col) {
   if (row < 0 || row >= matrix->rows) return MATRIX_INDEX_ERROR;
   if (col < 0 || col >= matrix->cols) return MATRIX_INDEX_ERROR;
   return MATRIX_SUCCESS;
-}
-
-static inline int double_eq(double a, double b) {
-  return fabs(a - b) <= fmax(fabs(a), fabs(b)) * DOUBLE_EPSILON;
 }
 
 MatrixError matrix_create(Matrix** matrix, int rows, int cols) {
@@ -171,10 +176,124 @@ MatrixError matrix_copy(const Matrix* const source, Matrix** const destination) 
   if (!destination) return MATRIX_NULL_POINTER;
   
   status = matrix_create(destination, source->rows, source->cols);
-  if (status != DET_SUCCESS) return status;
+  if (status != MATRIX_SUCCESS) return status;
   
   for (int i = 0; i < source->rows; i++) {
     memcpy((*destination)->data[i], source->data[i], source->cols * sizeof(double));
+  }
+  
+  return MATRIX_SUCCESS;
+}
+
+MatrixError matrix_swap_rows(Matrix* matrix, int row1, int row2) {
+  MatrixError status = check_matrix_exists(matrix);
+  if (status != MATRIX_SUCCESS) return status;
+  
+  status = check_row_index(matrix, row1);
+  if (status != MATRIX_SUCCESS) return status;
+  
+  status = check_row_index(matrix, row2);
+  if (status != MATRIX_SUCCESS) return status;
+  
+  if (row1 == row2) return MATRIX_SUCCESS;
+  
+  double* temp = matrix->data[row1];
+  matrix->data[row1] = matrix->data[row2];
+  matrix->data[row2] = temp;
+  
+  return MATRIX_SUCCESS;
+}
+
+MatrixError matrix_multiply_row(Matrix* matrix, int row, double factor) {
+  MatrixError status = check_matrix_exists(matrix);
+  if (status != MATRIX_SUCCESS) return status;
+  
+  status = check_row_index(matrix, row);
+  if (status != MATRIX_SUCCESS) return status;
+  
+  if (double_eq(factor, 1.0)) return MATRIX_SUCCESS;
+  
+  for (int j = 0; j < matrix->cols; j++) {
+    matrix->data[row][j] *= factor;
+  }
+  
+  return MATRIX_SUCCESS;
+}
+
+MatrixError matrix_add_row(Matrix* matrix, int target_row, int source_row, double factor) {
+  MatrixError status = check_matrix_exists(matrix);
+  if (status != MATRIX_SUCCESS) return status;
+  
+  status = check_row_index(matrix, target_row);
+  if (status != MATRIX_SUCCESS) return status;
+  
+  status = check_row_index(matrix, source_row);
+  if (status != MATRIX_SUCCESS) return status;
+  
+  if (double_is_zero(factor)) return MATRIX_SUCCESS;
+  
+  for (int j = 0; j < matrix->cols; j++) {
+    matrix->data[target_row][j] += matrix->data[source_row][j] * factor;
+  }
+  
+  return MATRIX_SUCCESS;
+}
+
+MatrixError matrix_find_nonzero_in_col(const Matrix* matrix, int start_row, int col, int* found_row) {
+  MatrixError status = check_matrix_exists(matrix);
+  if (status != MATRIX_SUCCESS) return status;
+  
+  if (!found_row) return MATRIX_NULL_POINTER;
+  
+  status = check_indices(matrix, start_row, col);
+  if (status != MATRIX_SUCCESS) return status;
+  
+  for (int i = start_row; i < matrix->rows; i++) {
+    if (!double_is_zero(matrix->data[i][col])) {
+      *found_row = i;
+      return MATRIX_SUCCESS;
+    }
+  }
+  
+  *found_row = -1;
+  return MATRIX_SUCCESS;
+}
+
+MatrixError matrix_normalize_row(Matrix* matrix, int row, int pivot_col) {
+  MatrixError status = check_matrix_exists(matrix);
+  if (status != MATRIX_SUCCESS) return status;
+  
+  status = check_indices(matrix, row, pivot_col);
+  if (status != MATRIX_SUCCESS) return status;
+  
+  double pivot = matrix->data[row][pivot_col];
+  if (double_is_zero(pivot)) {
+    return MATRIX_SINGULAR;
+  }
+  
+  if (double_eq(pivot, 1.0)) return MATRIX_SUCCESS;
+  
+  return matrix_multiply_row(matrix, row, 1.0 / pivot);
+}
+
+MatrixError matrix_eliminate_below(Matrix* matrix, int pivot_row, int pivot_col) {
+  MatrixError status = check_matrix_exists(matrix);
+  if (status != MATRIX_SUCCESS) return status;
+  
+  status = check_indices(matrix, pivot_row, pivot_col);
+  if (status != MATRIX_SUCCESS) return status;
+  
+  double pivot = matrix->data[pivot_row][pivot_col];
+  if (double_is_zero(pivot)) {
+    return MATRIX_SINGULAR;
+  }
+  
+  for (int i = pivot_row + 1; i < matrix->rows; i++) {
+    if (!double_is_zero(matrix->data[i][pivot_col])) {
+      double factor = -matrix->data[i][pivot_col] / pivot;
+      status = matrix_add_row(matrix, i, pivot_row, factor);
+      if (status != MATRIX_SUCCESS) return status;
+    }
   }
   
   return MATRIX_SUCCESS;
