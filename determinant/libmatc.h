@@ -1,7 +1,7 @@
 #ifndef LIBMATC_H
 #define LIBMATC_H
 
-#define DOUBLE_EPSILON 1e-9
+#include <stdio.h>
 
 typedef enum {
   MATRIX_SUCCESS      = 0,
