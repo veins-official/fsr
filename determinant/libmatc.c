@@ -68,21 +68,32 @@ MatrixError matrix_free(Matrix** matrix) {
 }
 
 MatrixError matrix_get_rows(const Matrix* matrix, int* rows) {
-    if (!matrix) return MATRIX_NULL_POINTER;
-    if (!matrix->data) return MATRIX_MEMORY_ERROR;
-    if (matrix->rows <= 0) return MATRIX_INVALID_SIZE;
-    if (!rows) return MATRIX_NULL_POINTER;
-    
-    *rows = matrix->rows;
-    return MATRIX_SUCCESS;
+  if (!matrix) return MATRIX_NULL_POINTER;
+  if (!matrix->data) return MATRIX_MEMORY_ERROR;
+  if (matrix->rows <= 0) return MATRIX_INVALID_SIZE;
+  if (!rows) return MATRIX_NULL_POINTER;
+
+  *rows = matrix->rows;
+  return MATRIX_SUCCESS;
 }
 
 MatrixError matrix_get_cols(const Matrix* matrix, int* cols) {
-    if (!matrix) return MATRIX_NULL_POINTER;
-    if (!matrix->data) return MATRIX_MEMORY_ERROR;
-    if (matrix->cols <= 0) return MATRIX_INVALID_SIZE;
-    if (!cols) return MATRIX_NULL_POINTER;
-    
-    *cols = matrix->cols;
-    return MATRIX_SUCCESS;
+  if (!matrix) return MATRIX_NULL_POINTER;
+  if (!matrix->data) return MATRIX_MEMORY_ERROR;
+  if (matrix->cols <= 0) return MATRIX_INVALID_SIZE;
+  if (!cols) return MATRIX_NULL_POINTER;
+
+  *cols = matrix->cols;
+  return MATRIX_SUCCESS;
 }
+
+MatrixError matrix_is_square(const Matrix* matrix, int* result) {
+  if (!matrix) return MATRIX_NULL_POINTER;
+  if (!matrix->data) return MATRIX_MEMORY_ERROR;
+  if (matrix->rows <= 0 || matrix->cols <= 0) return MATRIX_INVALID_SIZE;
+  if (!result) return MATRIX_NULL_POINTER;
+
+  *result = (matrix->rows == matrix->cols);
+  return MATRIX_SUCCESS;
+}
+
