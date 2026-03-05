@@ -11,6 +11,7 @@ typedef enum {
   MATRIX_INDEX_ERROR  = 4,
   MATRIX_INVALID_SIZE = 5,
   MATRIX_SINGULAR     = 6,
+  MATRIX_NOT_SQUARE   = 7,
   
 } MatrixError;
 

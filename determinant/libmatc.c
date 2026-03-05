@@ -16,6 +16,8 @@ static inline int double_is_zero(double x);
 static inline int double_eq(double a, double b);
 static MatrixError check_matrix_exists(const Matrix* matrix);
 static MatrixError check_indices(const Matrix* matrix, int row, int col);
+static MatrixError gauss_forward(Matrix* matrix, double* det, int* sign);
+static MatrixError determinant_square(const Matrix* matrix, double* result);
 
 static inline int double_is_zero(double x) {
   return fabs(x) <= DOUBLE_EPSILON;
@@ -35,6 +37,58 @@ static MatrixError check_indices(const Matrix* matrix, int row, int col) {
   if (row < 0 || row >= matrix->rows) return MATRIX_INDEX_ERROR;
   if (col < 0 || col >= matrix->cols) return MATRIX_INDEX_ERROR;
   return MATRIX_SUCCESS;
+}
+
+static MatrixError gauss_forward(Matrix* matrix, double* det, int* sign) {
+  *det = 1.0;
+  *sign = 1;
+
+  for (int i = 0; i < matrix->rows; i++) {
+    int pivot_row;
+    MatrixError status = matrix_find_nonzero_in_col(matrix, i, i, &pivot_row);
+    if (status != MATRIX_SUCCESS) return status;
+
+    if (pivot_row == -1) {
+      *det = 0.0;
+      return MATRIX_SINGULAR;
+    }
+
+    if (pivot_row != i) {
+      status = matrix_swap_rows(matrix, i, pivot_row);
+      if (status != MATRIX_SUCCESS) return status;
+      *sign = -(*sign);
+    }
+
+    *det *= matrix->data[i][i];
+
+    status = matrix_eliminate_below(matrix, i, i);
+    if (status != MATRIX_SUCCESS && status != MATRIX_SINGULAR) {
+      return status;
+    }
+  }
+
+  return MATRIX_SUCCESS;
+}
+
+static MatrixError determinant_square(const Matrix* matrix, double* result) {
+  const int n = matrix->rows;
+  
+  Matrix* temp = NULL;
+  MatrixError status = matrix_copy(matrix, &temp);
+  if (status != MATRIX_SUCCESS) return status;
+  
+  double det;
+  int sign;
+  status = gauss_forward(temp, &det, &sign);
+  
+  if (status == MATRIX_SUCCESS) {
+    *result = sign * det;
+  } else {
+    *result = 0.0;
+  }
+  
+  matrix_free(&temp);
+  return status;
 }
 
 MatrixError matrix_create(Matrix** matrix, int rows, int cols) {
@@ -297,5 +351,17 @@ MatrixError matrix_eliminate_below(Matrix* matrix, int pivot_row, int pivot_col)
   }
   
   return MATRIX_SUCCESS;
+}
+
+MatrixError matrix_determinant(const Matrix* matrix, double* result) {
+  MatrixError status = check_matrix_exists(matrix);
+  if (status != MATRIX_SUCCESS) return status;
+  if (!result) return MATRIX_NULL_POINTER;
+  
+  if (matrix->rows != matrix->cols) {
+    return MATRIX_NOT_SQUARE;
+  }
+  
+  return determinant_square(matrix, result);
 }
 
