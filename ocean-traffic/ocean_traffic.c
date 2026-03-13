@@ -85,12 +85,20 @@ const char* ot_error_string(ot_error_t error) {
   }
 }
 
-unsigned char* load_png(const char* filename, unsigned int* width, unsigned int* height) {
-  unsigned char* image = NULL; 
-  int error = lodepng_decode32_file(&image, width, height, filename);
-  if(error != 0) {
-    printf("error %u: %s\n", error, lodepng_error_text(error)); 
-  }
-  return (image);
+ot_error_t load_png(unsigned char* dest, const char* filename, unsigned int* width, unsigned int* height) {
+  int error = lodepng_decode32_file(&dest, width, height, filename);
+  return ot_error_from_lodepng(error);
+}
+
+ot_error_t write_png(const char* filename, const unsigned char* image, unsigned width, unsigned height) {
+  unsigned char* png;
+  long unsigned int pngsize;
+  int error = lodepng_encode32(&png, &pngsize, image, width, height);
+  
+  if(error) lodepng_save_file(png, pngsize, filename);
+  else return ot_error_from_lodepng(error);
+  
+  free(png);
+  return OT_SUCCESS;
 }
 
