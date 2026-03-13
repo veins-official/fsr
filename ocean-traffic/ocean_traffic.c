@@ -100,10 +100,14 @@ ot_error_t write_png(const char* filename, const unsigned char* image, unsigned 
   
   error = lodepng_encode32(&png, &pngsize, image, width, height);
   
-  if(error == 0) lodepng_save_file(png, pngsize, filename);
+  if (error == 0) lodepng_save_file(png, pngsize, filename);
   else return ot_error_from_lodepng(error);
   
   free(png);
   return OT_SUCCESS;
+}
+
+ot_error_t write_default_png(const unsigned char* image, unsigned width, unsigned height) {
+  return write_png(OT_DEFAULT_OUTPUT, image, width, height);
 }
 

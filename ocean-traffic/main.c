@@ -3,16 +3,20 @@
 
 #include "ocean_traffic.h"
 
-int main(void) {
-  const char* filename = "source.png";
+int main(int argc, char* argv[]) {
+  unsigned char* picture;
   unsigned int width, height;
   ot_error_t error;
   // int size;
   // int bw_size;
-
-  unsigned char* picture = NULL;
   
-  error = load_png(&picture, filename, &width, &height);
+  if (argc != 2 && argc != 3) {
+    printf("Usage: %s input_file [output_file]\n", argv[0]);
+    return 1;
+  }
+
+  
+  error = load_png(&picture, argv[1], &width, &height);
   if (error != OT_SUCCESS) {
     printf("%s\n", ot_error_string(error)); 
     return 1;
@@ -48,11 +52,9 @@ int main(void) {
 
   // write_png("intermediate_result.png", finish, width, height);
   // color(blr_pic, finish, bw_size);
-  
-  printf("ersesdfrr\n");
 
-  // выписали результат
-  error = write_png("picture_out.png", picture, width, height); 
+  if (argc == 3) error = write_png(argv[2], picture, width, height);
+  else error = write_default_png(picture, width, height);
   if (error != OT_SUCCESS) {
     printf("%s\n", ot_error_string(error)); 
     return 1;

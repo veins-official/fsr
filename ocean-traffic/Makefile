@@ -18,7 +18,9 @@ lodepng.o: lodepng.c lodepng.h
 	$(CC) -c $(CFLAGS) $(LODEPNG_FLAGS) $<
 
 clean:
+	find . -maxdepth 1 -name "*.png" ! -name "source.png" -delete
 	rm -f *.o *.out
+
 
 .PHONY: clean
 

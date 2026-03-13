@@ -1,6 +1,9 @@
 #ifndef OCEAN_TRAFFIC_H
 #define OCEAN_TRAFFIC_H
 
+#define OT_DEFAULT_OUTPUT "destination.png"
+#define OT_DEFAULT_INPUT "source.png"
+
 typedef enum {
   OT_SUCCESS             = 0,
 
@@ -42,6 +45,7 @@ const char* ot_error_string(ot_error_t error);
 
 ot_error_t load_png(unsigned char** dest, const char* filename, unsigned int* width, unsigned int* height);
 ot_error_t write_png(const char* filename, const unsigned char* image, unsigned width, unsigned height);
+ot_error_t write_default_png(const unsigned char* image, unsigned width, unsigned height);
 
 #endif
 
