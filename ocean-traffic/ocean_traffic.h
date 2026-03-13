@@ -2,7 +2,6 @@
 #define OCEAN_TRAFFIC_H
 
 #define OT_DEFAULT_OUTPUT "destination.png"
-#define OT_DEFAULT_INPUT "source.png"
 
 typedef enum {
   OT_SUCCESS             = 0,
