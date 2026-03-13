@@ -6785,6 +6785,7 @@ const char* lodepng_error_text(unsigned code) {
     case 113: return "ICC profile unreasonably large";
     case 114: return "sBIT chunk has wrong size for the color type of the image";
     case 115: return "sBIT value out of range";
+    default: return "Unknown error";
   }
   return "unknown error code";
 }
