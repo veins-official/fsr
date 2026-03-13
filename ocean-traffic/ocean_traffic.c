@@ -1,9 +1,7 @@
 #include <stdio.h>
-#include <strings.h>
-// #include <stdlib.h> 
-// #include <math.h> 
+#include <stdlib.h>
 
-#include "lodepng.h" 
+#include "lodepng.h"
 #include "ocean_traffic.h"
 
 ot_error_t ot_error_from_lodepng(unsigned lodepng_error) {
@@ -42,7 +40,7 @@ ot_error_t ot_error_from_lodepng(unsigned lodepng_error) {
         case 68:
         case 71: return OT_ERR_PNG_ENCODE;
         
-        default: return OT_ERR_PNG_ENCODE;
+        default: return OT_ERR_UNKNOWN;
     }
 }
 
@@ -85,17 +83,24 @@ const char* ot_error_string(ot_error_t error) {
   }
 }
 
-ot_error_t load_png(unsigned char* dest, const char* filename, unsigned int* width, unsigned int* height) {
-  int error = lodepng_decode32_file(&dest, width, height, filename);
+ot_error_t load_png(unsigned char** dest, const char* filename, unsigned int* width, unsigned int* height) {
+  int error;
+  if (!filename || !width || !height) return OT_ERR_NULL_POINTER;
+  error = lodepng_decode32_file(dest, width, height, filename);
   return ot_error_from_lodepng(error);
 }
 
 ot_error_t write_png(const char* filename, const unsigned char* image, unsigned width, unsigned height) {
-  unsigned char* png;
+  unsigned char* png = NULL;
   long unsigned int pngsize;
-  int error = lodepng_encode32(&png, &pngsize, image, width, height);
+  int error;
   
-  if(error) lodepng_save_file(png, pngsize, filename);
+  if (!filename || !image) return OT_ERR_NULL_POINTER;
+  if (width == 0 || height == 0) return OT_ERR_INVALID_SIZE;
+  
+  error = lodepng_encode32(&png, &pngsize, image, width, height);
+  
+  if(error == 0) lodepng_save_file(png, pngsize, filename);
   else return ot_error_from_lodepng(error);
   
   free(png);
