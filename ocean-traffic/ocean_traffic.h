@@ -38,13 +38,16 @@ typedef enum {
   OT_ERR_UNKNOWN         = 599,
 } ot_error_t;
 
-ot_error_t ot_error_from_lodepng(unsigned lodepng_error);
+ot_error_t ot_error_from_lodepng(unsigned int lodepng_error);
 
 const char* ot_error_string(ot_error_t error);
 
 ot_error_t load_png(unsigned char** dest, const char* filename, unsigned int* width, unsigned int* height);
-ot_error_t write_png(const char* filename, const unsigned char* image, unsigned width, unsigned height);
-ot_error_t write_default_png(const unsigned char* image, unsigned width, unsigned height);
+ot_error_t write_png(const char* filename, const unsigned char* image, unsigned int width, unsigned int height);
+ot_error_t write_default_png(const unsigned char* image, unsigned int width, unsigned int height);
+
+/* Unsafe: does not check the size of dest */
+ot_error_t grayscale(const unsigned char* src, unsigned char* dest, unsigned int width, unsigned int height);
 
 #endif
 

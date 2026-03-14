@@ -4,13 +4,12 @@
 #include "ocean_traffic.h"
 
 int main(int argc, char* argv[]) {
+  unsigned char* grayscale_picture;
   unsigned char* picture;
-  unsigned int width, height;
+  unsigned width, height;
   ot_error_t error;
-  // int size;
-  // int bw_size;
   
-  if (argc != 2 && argc != 3) {
+  if (argc < 2) {
     printf("Usage: %s input_file [output_file]\n", argv[0]);
     return 1;
   }
@@ -18,54 +17,43 @@ int main(int argc, char* argv[]) {
   
   error = load_png(&picture, argv[1], &width, &height);
   if (error != OT_SUCCESS) {
-    printf("%s\n", ot_error_string(error)); 
+    printf("%s\n", ot_error_string(error));
     return 1;
   }
 
-  // size = width * height * 4;
-  // bw_size = width * height;
-
-
-  // unsigned char* bw_pic = (unsigned char*)malloc(bw_size*sizeof(unsigned char)); 
-  // unsigned char* blr_pic = (unsigned char*)malloc(bw_size*sizeof(unsigned char)); 
-  // unsigned char* finish = (unsigned char*)malloc(size*sizeof(unsigned char)); 
-
-  // Например, поиграли с  контрастом
-  // contrast(bw_pic, bw_size); 
-  // посмотрим на промежуточные картинки
-  // write_png("contrast.png", finish, width, height);
-
-  // поиграли с Гауссом
-  // Gauss_blur(bw_pic, blr_pic, width, height); 
-  // посмотрим на промежуточные картинки
-  // write_png("gauss.png", finish, width, height);
-
-  // сделали еще что-нибудь
-  // .....
-  // ....
-  // ....
-  // ....
-  // ....
-  // ....
-  // ....
-  //
-
-  // write_png("intermediate_result.png", finish, width, height);
-  // color(blr_pic, finish, bw_size);
+  grayscale_picture = (unsigned char*)malloc(width * height * sizeof(unsigned char));
+  if (!grayscale_picture) {
+    printf("Memory allocation failed\n");
+    return 1;
+  }
+  
+  error = grayscale(picture, grayscale_picture, width, height);
+  if (error != OT_SUCCESS) {
+    printf("%s\n", ot_error_string(error));
+    return 1;
+  }
+  
+  for (unsigned int i = 0; i < height; i++) {
+    for (unsigned int j = 0; j < width; j++) {
+      unsigned int color = grayscale_picture[i * width + j];
+      unsigned int index = (i * width + j) * 4;
+      picture[index    ] = color;
+      picture[index + 1] = color;
+      picture[index + 2] = color;
+      picture[index + 3] = color;
+    }
+  }
 
   if (argc == 3) error = write_png(argv[2], picture, width, height);
   else error = write_default_png(picture, width, height);
   if (error != OT_SUCCESS) {
-    printf("%s\n", ot_error_string(error)); 
+    printf("%s\n", ot_error_string(error));
     return 1;
   }
 
-  // не забыли почистить память!
-  // free(bw_pic); 
-  // free(blr_pic); 
-  // free(finish); 
-  free(picture); 
+  free(grayscale_picture);
+  free(picture);
 
-  return 0; 
+  return 0;
 }
 

@@ -3,7 +3,7 @@
 #include "lodepng.h"
 #include "ocean_traffic.h"
 
-ot_error_t ot_error_from_lodepng(unsigned lodepng_error) {
+ot_error_t ot_error_from_lodepng(unsigned int lodepng_error) {
   switch (lodepng_error) {
     case 0:  return OT_SUCCESS;
 
@@ -89,7 +89,7 @@ ot_error_t load_png(unsigned char** dest, const char* filename, unsigned int* wi
   return ot_error_from_lodepng(error);
 }
 
-ot_error_t write_png(const char* filename, const unsigned char* image, unsigned width, unsigned height) {
+ot_error_t write_png(const char* filename, const unsigned char* image, unsigned int width, unsigned int height) {
   unsigned char* png = NULL;
   long unsigned int pngsize;
   int error;
@@ -106,7 +106,24 @@ ot_error_t write_png(const char* filename, const unsigned char* image, unsigned 
   return OT_SUCCESS;
 }
 
-ot_error_t write_default_png(const unsigned char* image, unsigned width, unsigned height) {
+ot_error_t write_default_png(const unsigned char* image, unsigned int width, unsigned int height) {
   return write_png(OT_DEFAULT_OUTPUT, image, width, height);
+}
+
+ot_error_t grayscale(const unsigned char* src, unsigned char* dest, unsigned int width, unsigned int height) {
+  unsigned int pngsize;
+  if (!src || !dest) return OT_ERR_NULL_POINTER;
+
+  if (width == 0 || height == 0) return OT_ERR_INVALID_SIZE;
+
+  pngsize = width * height;
+
+  for (unsigned int i = 0; i < pngsize; i++) {
+    const unsigned char* pixel = src + i * 4;
+    unsigned char gray = (unsigned char)(0.299f * pixel[0] + 0.587f * pixel[1] + 0.114f * pixel[2]);
+    dest[i] = gray;
+  }
+
+  return OT_SUCCESS;
 }
 
