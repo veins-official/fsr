@@ -38,6 +38,11 @@ typedef enum {
   OT_ERR_UNKNOWN         = 599,
 } ot_error_t;
 
+typedef struct component_t {
+  int center_x, center_y;
+  int size;
+} component_t;
+
 ot_error_t ot_error_from_lodepng(unsigned int lodepng_error);
 
 const char* ot_error_string(ot_error_t error);
@@ -48,6 +53,16 @@ ot_error_t write_default_png(const unsigned char* image, unsigned int width, uns
 
 /* Unsafe: does not check the size of dest */
 ot_error_t grayscale(const unsigned char* src, unsigned char* dest, unsigned int width, unsigned int height);
+ot_error_t gaussian_blur(const unsigned char* src, unsigned char* dest, unsigned int width, unsigned int height);
+ot_error_t extract_edges(const unsigned char* src, unsigned char* dest, unsigned int width, unsigned int height, unsigned int threshold);
+ot_error_t find_components(const unsigned char* src,
+                           component_t* components,
+                           unsigned int width,
+                           unsigned int height,
+                           unsigned int max_components_count,
+                           unsigned int* components_count,
+                           unsigned int min_components_size,
+                           unsigned int max_components_size);
 
 #endif
 

@@ -1,7 +1,66 @@
 #include <stdlib.h>
+#include <math.h>
 
 #include "lodepng.h"
 #include "ocean_traffic.h"
+
+typedef struct {
+  int* data;
+  int head;
+  int tail;
+  int capacity;
+} queue_t;
+
+static queue_t* queue_create(int capacity) {
+  queue_t* q = malloc(sizeof(queue_t));
+  q->data = malloc(capacity * sizeof(int));
+  q->head = 0;
+  q->tail = 0;
+  q->capacity = capacity;
+  return q;
+}
+
+static void queue_free(queue_t* q) {
+  free(q->data);
+  free(q);
+}
+
+static void queue_push(queue_t* q, int val) {
+  q->data[q->tail++] = val;
+}
+
+static int queue_pop(queue_t* q) {
+  return q->data[q->head++];
+}
+
+static int queue_empty(queue_t* q) {
+  return q->head >= q->tail;
+}
+
+static const int dx[] = { -1, -1, -1,  0,  0,  1,  1,  1 };
+static const int dy[] = { -1,  0,  1, -1,  1, -1,  0,  1 };
+
+static int sobel_gradient(const unsigned char* gray, int x, int y, int width, int height) {
+  int gx = 0, gy = 0;
+  
+  if (x < 1 || x >= width - 1 || y < 1 || y >= height - 1) return 0;
+
+  gx += -1 * gray[(y - 1) * width + x - 1];
+  gx += -2 * gray[   y    * width + x - 1];
+  gx += -1 * gray[(y + 1) * width + x - 1];
+  gx +=  1 * gray[(y - 1) * width + x + 1];
+  gx +=  2 * gray[   y    * width + x + 1];
+  gx +=  1 * gray[(y + 1) * width + x + 1];
+
+  gy += -1 * gray[(y - 1) * width + (x - 1)];
+  gy += -2 * gray[(y - 1) * width +    x   ];
+  gy += -1 * gray[(y - 1) * width + (x + 1)];
+  gy +=  1 * gray[(y + 1) * width + (x - 1)];
+  gy +=  2 * gray[(y + 1) * width +    x   ];
+  gy +=  1 * gray[(y + 1) * width + (x + 1)];
+
+  return sqrt(gx * gx + gy * gy);
+}
 
 ot_error_t ot_error_from_lodepng(unsigned int lodepng_error) {
   switch (lodepng_error) {
@@ -124,6 +183,133 @@ ot_error_t grayscale(const unsigned char* src, unsigned char* dest, unsigned int
     dest[i] = gray;
   }
 
+  return OT_SUCCESS;
+}
+
+ot_error_t gaussian_blur(const unsigned char* src, unsigned char* dest, unsigned int width, unsigned int height) {
+  const float w_center = 0.1f;
+  const float w_cross = 0.1f;
+  const float w_corner = 0.125f;
+  
+  if (!src || !dest) return OT_ERR_NULL_POINTER;
+  if (width < 3 || height < 3) return OT_ERR_INVALID_SIZE;
+
+  memcpy(dest, src, width);
+  memcpy(dest + (height - 1) * width, src + (height - 1) * width, width);
+
+  for (unsigned int i = 1; i < height - 1; i++) {
+    dest[i * width] = src[i * width];
+    dest[i * width + width - 1] = src[i * width + width - 1];
+  }
+
+  for (unsigned int i = 1; i < height - 1; i++) {
+    for (unsigned int j = 1; j < width - 1; j++) {
+      unsigned int center = i * width + j;
+
+      double value =
+      w_center * src[center] +
+      w_cross  * src[(i + 1) * width + j] +
+      w_cross  * src[(i - 1) * width + j] +
+      w_cross  * src[i * width + (j + 1)] +
+      w_cross  * src[i * width + (j - 1)] +
+      w_corner * src[(i + 1) * width + (j + 1)] +
+      w_corner * src[(i + 1) * width + (j - 1)] +
+      w_corner * src[(i - 1) * width + (j + 1)] +
+      w_corner * src[(i - 1) * width + (j - 1)];
+
+      dest[center] = (unsigned char) value;
+    }
+  }
+
+  return OT_SUCCESS;
+}
+
+ot_error_t extract_edges(const unsigned char* src, unsigned char* dest, unsigned int width, unsigned int height, unsigned int threshold) {
+  if (!src || !dest) return OT_ERR_NULL_POINTER;
+
+  for (unsigned int y = 0; y < height; y++) {
+    for (unsigned int x = 0; x < width; x++) {
+      unsigned int grad = sobel_gradient(src, x, y, width, height);
+      dest[y * width + x] = grad > threshold ? 1 : 0;
+    }
+  }
+  return OT_SUCCESS;
+}
+
+ot_error_t find_components(const unsigned char* src,
+                           component_t* components,
+                           unsigned int width,
+                           unsigned int height,
+                           unsigned int max_components_count,
+                           unsigned int* components_count,
+                           unsigned int min_components_size,
+                           unsigned int max_components_size) {
+  unsigned int local_components_count = 0;
+  unsigned char* visited;
+  queue_t* queue;
+  
+  if (!src || !components || !components_count) return OT_ERR_NULL_POINTER;
+  
+  visited = calloc(width * height, 1);
+  if (!visited) return OT_ERR_MEMORY_ALLOC;
+  queue = queue_create(width * height);
+  if (!queue) {
+    free(visited);
+    return OT_ERR_MEMORY_ALLOC;
+  }
+  if (!queue->data) {
+    free(visited);
+    free(queue);
+    return OT_ERR_MEMORY_ALLOC;
+  }
+
+  for (unsigned int y = 0; y < height; y++) {
+    for (unsigned int x = 0; x < width; x++) {
+      unsigned int index = y * width + x;
+
+      if (src[index] && !visited[index]) {
+        unsigned int size = 0;
+        int sum_x = 0, sum_y = 0;
+
+        queue->head = queue->tail = 0;
+        queue_push(queue, index);
+        visited[index] = 1;
+
+        while (!queue_empty(queue)) {
+          int current = queue_pop(queue);
+          int cx = current % width;
+          int cy = current / width;
+
+          size++;
+          sum_x += cx;
+          sum_y += cy;
+
+          for (int d = 0; d < 8; d++) {
+            int nx = cx + dx[d];
+            int ny = cy + dy[d];
+            if (nx >= 0 && (unsigned int) nx < width && ny >= 0 && (unsigned int) ny < height) {
+              int nindex = ny * width + nx;
+              if (src[nindex] && !visited[nindex]) {
+                visited[nindex] = 1;
+                queue_push(queue, nindex);
+              }
+            }
+          }
+        }
+
+        if (size >= min_components_size && size <= max_components_size && local_components_count < max_components_count) {
+          components[local_components_count].size = size;
+          components[local_components_count].center_x = sum_x / size;
+          components[local_components_count].center_y = sum_y / size;
+          local_components_count++;
+        }
+      }
+    }
+  }
+  
+  *components_count = local_components_count;
+  queue_free(queue);
+  free(visited);
   return OT_SUCCESS;
 }
 
