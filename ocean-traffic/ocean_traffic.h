@@ -62,7 +62,9 @@ ot_error_t find_components(const unsigned char* src,
                            unsigned int max_components_count,
                            unsigned int* components_count,
                            unsigned int min_components_size,
-                           unsigned int max_components_size);
+                           unsigned int max_components_size,
+                           unsigned int areas[][4],
+                           unsigned int areas_count);
 
 #endif
 

@@ -12,6 +12,17 @@ int main(int argc, char* argv[]) {
   unsigned int width, height;
   unsigned int comp_count;
   ot_error_t error;
+  unsigned int areas[][4] = {
+    {532,  24,  727, 287},
+    {577, 288, 1124, 637},
+    {526, 486,  584, 531},
+    {536, 531,  583, 563},
+    {566, 576,  582, 598},
+    {510, 337,  585, 412},
+    {509, 293,  564, 315},
+    {550, 312,  564, 330},
+    {505, 328,  550, 336}
+  };
   
   if (argc < 2) {
     printf("Usage: %s input_file [output_file]\n", argv[0]);
@@ -59,7 +70,7 @@ int main(int argc, char* argv[]) {
     return 1;
   }
   
-  error = extract_edges(grayscale_picture, edge_picture, width, height, 50);
+  error = extract_edges(grayscale_picture, edge_picture, width, height, 100);
   if (error != OT_SUCCESS) {
     free(grayscale_picture);
     free(blur_picture);
@@ -69,7 +80,7 @@ int main(int argc, char* argv[]) {
     return 1;
   }
   
-  error = find_components(edge_picture, components, width, height, 5000, &comp_count, 2, 100);
+  error = find_components(edge_picture, components, width, height, 5000, &comp_count, 1, 100, areas, 9);
   if (error != OT_SUCCESS) {
     free(grayscale_picture);
     free(blur_picture);
@@ -89,16 +100,19 @@ int main(int argc, char* argv[]) {
     return 1;
   }
   
+  /*
   for (unsigned int i = 0; i < height; i++) {
     for (unsigned int j = 0; j < width; j++) {
-      unsigned int color = grayscale_picture[i * width + j];
+      unsigned int color = edge_picture[i * width + j];
       unsigned int index = (i * width + j) * 4;
-      picture[index    ] = color;
-      picture[index + 1] = color;
-      picture[index + 2] = color;
+      picture[index    ] = color * 255;
+      picture[index + 1] = color * 255;
+      picture[index + 2] = color * 255;
       picture[index + 3] = 255;
     }
   }
+  */
+  
   
   for (unsigned int i = 0; i < comp_count; i++) {
     component_t c = components[i];

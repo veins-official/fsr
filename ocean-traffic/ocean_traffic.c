@@ -232,6 +232,14 @@ ot_error_t extract_edges(const unsigned char* src, unsigned char* dest, unsigned
   return OT_SUCCESS;
 }
 
+static int coords_in_areas(unsigned int areas[][4], unsigned int areas_count, unsigned int x, unsigned int y) {
+  int result = 0;
+  for (unsigned int i = 0; !result && i < areas_count; i++) {
+    result = x >= areas[i][0] && x <= areas[i][2] && y >= areas[i][1] && y <= areas[i][3];
+  }
+  return result;
+}
+
 ot_error_t find_components(const unsigned char* src,
                            component_t* components,
                            unsigned int width,
@@ -239,7 +247,9 @@ ot_error_t find_components(const unsigned char* src,
                            unsigned int max_components_count,
                            unsigned int* components_count,
                            unsigned int min_components_size,
-                           unsigned int max_components_size) {
+                           unsigned int max_components_size,
+                           unsigned int areas[][4],
+                           unsigned int areas_count) {
   unsigned int local_components_count = 0;
   unsigned char* visited;
   queue_t* queue;
@@ -262,8 +272,8 @@ ot_error_t find_components(const unsigned char* src,
   for (unsigned int y = 0; y < height; y++) {
     for (unsigned int x = 0; x < width; x++) {
       unsigned int index = y * width + x;
-
-      if (src[index] && !visited[index]) {
+      
+      if (coords_in_areas(areas, areas_count, x, y) && src[index] && !visited[index]) {
         unsigned int size = 0;
         int sum_x = 0, sum_y = 0;
 
