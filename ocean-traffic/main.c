@@ -8,6 +8,7 @@ int main(int argc, char* argv[]) {
   component_t components[5000];
   unsigned char* blur_picture;
   unsigned char* edge_picture;
+  unsigned char* edge_picture2 = NULL;
   unsigned char* picture;
   unsigned int width, height;
   unsigned int comp_count;
@@ -100,19 +101,9 @@ int main(int argc, char* argv[]) {
     return 1;
   }
   
-  /*
-  for (unsigned int i = 0; i < height; i++) {
-    for (unsigned int j = 0; j < width; j++) {
-      unsigned int color = edge_picture[i * width + j];
-      unsigned int index = (i * width + j) * 4;
-      picture[index    ] = color * 255;
-      picture[index + 1] = color * 255;
-      picture[index + 2] = color * 255;
-      picture[index + 3] = 255;
-    }
-  }
-  */
-  
+  bw_to_rgba(blur_picture, &edge_picture2, width, height);
+  printf("%p\n", edge_picture2);
+  printf("%d\n", write_png("edge_picture.png", edge_picture2, width, height));
   
   for (unsigned int i = 0; i < comp_count; i++) {
     component_t c = components[i];
@@ -151,6 +142,7 @@ int main(int argc, char* argv[]) {
   free(grayscale_picture);
   free(blur_picture);
   free(edge_picture);
+  free(edge_picture2);
   free(picture);
 
   return 0;

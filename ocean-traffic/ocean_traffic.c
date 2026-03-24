@@ -203,15 +203,15 @@ ot_error_t gaussian_blur(const unsigned char* src, unsigned char* dest, unsigned
       unsigned int center = i * width + j;
 
       double value =
-      w_center * src[center] +
-      w_cross  * src[(i + 1) * width + j] +
-      w_cross  * src[(i - 1) * width + j] +
-      w_cross  * src[i * width + (j + 1)] +
-      w_cross  * src[i * width + (j - 1)] +
-      w_corner * src[(i + 1) * width + (j + 1)] +
-      w_corner * src[(i + 1) * width + (j - 1)] +
-      w_corner * src[(i - 1) * width + (j + 1)] +
-      w_corner * src[(i - 1) * width + (j - 1)];
+        w_center * src[center] +
+        w_cross  * src[(i + 1) * width + j] +
+        w_cross  * src[(i - 1) * width + j] +
+        w_cross  * src[i * width + (j + 1)] +
+        w_cross  * src[i * width + (j - 1)] +
+        w_corner * src[(i + 1) * width + (j + 1)] +
+        w_corner * src[(i + 1) * width + (j - 1)] +
+        w_corner * src[(i - 1) * width + (j + 1)] +
+        w_corner * src[(i - 1) * width + (j - 1)];
 
       dest[center] = (unsigned char) value;
     }
@@ -226,7 +226,7 @@ ot_error_t extract_edges(const unsigned char* src, unsigned char* dest, unsigned
   for (unsigned int y = 0; y < height; y++) {
     for (unsigned int x = 0; x < width; x++) {
       unsigned int grad = sobel_gradient(src, x, y, width, height);
-      dest[y * width + x] = grad > threshold ? 1 : 0;
+      dest[y * width + x] = grad > threshold ? 255 : 0;
     }
   }
   return OT_SUCCESS;
@@ -316,6 +316,26 @@ ot_error_t find_components(const unsigned char* src,
   *components_count = local_components_count;
   queue_free(queue);
   free(visited);
+  return OT_SUCCESS;
+}
+
+ot_error_t bw_to_rgba(const unsigned char* src, unsigned char** dest, unsigned int width, unsigned int height) {
+  if (!src) return OT_ERR_NULL_POINTER;
+  if (!dest) return OT_ERR_INVALID_PARAM;
+  
+  *dest = malloc(4 * width * height * sizeof(unsigned char));
+  if (!*dest) return OT_ERR_MEMORY_ALLOC;
+  
+  for (unsigned int i = 0; i < height; i++) {
+    for (unsigned int j = 0; j < width; j++) {
+      unsigned char color = src[i * width + j];
+      unsigned int index = (i * width + j) * 4;
+      (*dest)[index    ] = color;
+      (*dest)[index + 1] = color;
+      (*dest)[index + 2] = color;
+      (*dest)[index + 3] = 255;
+    }
+  }
   return OT_SUCCESS;
 }
 
