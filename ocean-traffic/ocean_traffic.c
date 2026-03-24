@@ -169,7 +169,7 @@ ot_error_t write_default_png(const unsigned char* image, unsigned int width, uns
   return write_png(OT_DEFAULT_OUTPUT, image, width, height);
 }
 
-ot_error_t grayscale(const unsigned char* src, unsigned char* dest, unsigned int width, unsigned int height) {
+ot_error_t grayscale(const unsigned char* src, unsigned char* dest, unsigned int width, unsigned int height, double red_factor, double green_factor, double blue_factor) {
   unsigned int pngsize;
   if (!src || !dest) return OT_ERR_NULL_POINTER;
 
@@ -179,18 +179,14 @@ ot_error_t grayscale(const unsigned char* src, unsigned char* dest, unsigned int
 
   for (unsigned int i = 0; i < pngsize; i++) {
     const unsigned char* pixel = src + i * 4;
-    unsigned char gray = (unsigned char)(0.299f * pixel[0] + 0.587f * pixel[1] + 0.114f * pixel[2]);
+    unsigned char gray = (unsigned char)(red_factor * pixel[0] + green_factor * pixel[1] + blue_factor * pixel[2]);
     dest[i] = gray;
   }
 
   return OT_SUCCESS;
 }
 
-ot_error_t gaussian_blur(const unsigned char* src, unsigned char* dest, unsigned int width, unsigned int height) {
-  const float w_center = 0.1f;
-  const float w_cross = 0.1f;
-  const float w_corner = 0.125f;
-  
+ot_error_t gaussian_blur(const unsigned char* src, unsigned char* dest, unsigned int width, unsigned int height, double w_center, double w_cross, double w_corner) {
   if (!src || !dest) return OT_ERR_NULL_POINTER;
   if (width < 3 || height < 3) return OT_ERR_INVALID_SIZE;
 

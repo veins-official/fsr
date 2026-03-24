@@ -49,7 +49,7 @@ int main(int argc, char* argv[]) {
     return 1;
   }
   
-  error = grayscale(picture, grayscale_picture, width, height);
+  error = grayscale(picture, grayscale_picture, width, height, 0.299, 0.587, 0.114);
   if (error != OT_SUCCESS) {
     free(grayscale_picture);
     free(blur_picture);
@@ -79,7 +79,7 @@ int main(int argc, char* argv[]) {
     return 1;
   }
   
-  error = gaussian_blur(grayscale_picture, blur_picture, width, height);
+  error = gaussian_blur(grayscale_picture, blur_picture, width, height, 0.1, 0.1, 0.125);
   if (error != OT_SUCCESS) {
     free(grayscale_picture);
     free(blur_picture);

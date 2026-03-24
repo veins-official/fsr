@@ -52,8 +52,8 @@ ot_error_t write_png(const char* filename, const unsigned char* image, unsigned 
 ot_error_t write_default_png(const unsigned char* image, unsigned int width, unsigned int height);
 
 /* Unsafe: does not check the size of dest */
-ot_error_t grayscale(const unsigned char* src, unsigned char* dest, unsigned int width, unsigned int height);
-ot_error_t gaussian_blur(const unsigned char* src, unsigned char* dest, unsigned int width, unsigned int height);
+ot_error_t grayscale(const unsigned char* src, unsigned char* dest, unsigned int width, unsigned int height, double red_factor, double green_factor, double blue_factor);
+ot_error_t gaussian_blur(const unsigned char* src, unsigned char* dest, unsigned int width, unsigned int height, double w_center, double w_cross, double w_corner);
 ot_error_t extract_edges(const unsigned char* src, unsigned char* dest, unsigned int width, unsigned int height, unsigned int threshold);
 ot_error_t find_components(const unsigned char* src,
                            component_t* components,
