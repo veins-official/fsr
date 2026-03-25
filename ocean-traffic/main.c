@@ -24,10 +24,10 @@ static void print_usage(const char* program_name) {
   printf("Options:\n");
   printf("  -i FILE         Input PNG file (required)\n");
   printf("  -o FILE         Output PNG file (default: output.png)\n");
-  printf("  -m N            Maximum number of components (default: 5000)\n");
+  printf("  -m N            Maximum number of components (default: 500)\n");
   printf("  -f N            Minimum component size (default: 1)\n");
   printf("  -l N            Maximum component size (default: 100)\n");
-  printf("  -t N            Edge detection threshold (default: 100)\n");
+  printf("  -t N            Edge detection threshold (default: 125)\n");
   printf("  -a              Save grayscale image (grayscale.png)\n");
   printf("  -e              Save edges image (edges.png)\n");
   printf("  -v              Display version information\n");
@@ -47,10 +47,10 @@ static int parse_options(int argc, char* argv[], program_options_t* options) {
 
   options->input_file = NULL;
   options->output_file = (char*) "output.png";
-  options->max_components = 5000;
+  options->max_components = 500;
   options->min_component_size = 1;
   options->max_component_size = 100;
-  options->edge_threshold = 100;
+  options->edge_threshold = 125;
   options->save_grayscale = 0;
   options->save_edges = 0;
 
@@ -141,6 +141,7 @@ int main(int argc, char* argv[]) {
     free(picture);
     return 1;
   }
+  
   edge_picture = (unsigned char*)malloc(width * height * sizeof(unsigned char));
   if (!edge_picture) {
     printf("Memory allocation failed\n");
