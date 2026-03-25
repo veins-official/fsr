@@ -68,7 +68,7 @@ static int parse_options(int argc, char* argv[], program_options_t* options) {
       if (i + 1 < argc) options->min_component_size = atoi(argv[++i]);
     }
     else if (strcmp(argv[i], "-l") == 0 || strcmp(argv[i], "--max-size") == 0) {
-      if (i + 1 < argc) options->min_component_size = atoi(argv[++i]);
+      if (i + 1 < argc) options->max_component_size = atoi(argv[++i]);
     }
     else if (strcmp(argv[i], "-t") == 0 || strcmp(argv[i], "--threshold") == 0) {
       if (i + 1 < argc) options->edge_threshold = atoi(argv[++i]);
@@ -102,13 +102,13 @@ int main(int argc, char* argv[]) {
   program_options_t options;
   unsigned char* grayscale_picture = NULL;
   unsigned char* edge_picture = NULL;
-  unsigned char* log_picture = NULL;
   unsigned char* picture = NULL;
   component_t* components = NULL;
   unsigned int components_count;
   unsigned int width, height;
+  unsigned int areas_count = 9;
   ot_error_t error;
-  int i;
+  unsigned int i;
   
   unsigned int areas[][4] = {
     {532,  24,  727, 287},
@@ -129,7 +129,7 @@ int main(int argc, char* argv[]) {
   
   components = (component_t*)malloc(options.max_components * sizeof(component_t));
 
-  error = load_png(&picture, options.input_file, &width, &height);
+  error = load_png(&picture, &width, &height, options.input_file);
   if (error != OT_SUCCESS) {
     printf("Error loading image: %s\n", ot_error_string(error));
     return 1;
@@ -148,76 +148,77 @@ int main(int argc, char* argv[]) {
     free(picture);
     return 1;
   }
-  log_picture = (unsigned char*)malloc(4 * width * height * sizeof(unsigned char));
-  if (!log_picture) {
-    printf("Memory allocation failed\n");
-    free(grayscale_picture);
-    free(edge_picture);
-    free(picture);
-    return 1;
-  }
 
-  error = grayscale(picture, grayscale_picture, width, height, 0.299, 0.587, 0.114);
+  error = grayscale(grayscale_picture, picture, width, height, 0.299, 0.587, 0.114);
   if (error != OT_SUCCESS) {
     printf("Error in grayscale conversion: %s\n", ot_error_string(error));
     free(grayscale_picture);
     free(edge_picture);
-    free(log_picture);
     free(picture);
     return 1;
   }
 
   if (options.save_grayscale) {
-    error = bw_to_rgba(grayscale_picture, &log_picture, width, height);
-    if (error != OT_SUCCESS) {
-      printf("Error saving grayscale image: %s\n", ot_error_string(error));
+    unsigned char* log_picture = (unsigned char*)malloc(4 * width * height * sizeof(unsigned char));
+    if (!log_picture) {
+      printf("Error saving grayscale image: Memory allocation failed\n");
     } else {
-      error = write_png("grayscale.png", log_picture, width, height);
+      error = bw_to_rgba(log_picture, grayscale_picture, width, height);
       if (error != OT_SUCCESS) {
         printf("Error saving grayscale image: %s\n", ot_error_string(error));
       } else {
-        printf("Grayscale image saved as grayscale.png\n");
+        error = write_png(log_picture, width, height, "grayscale.png");
+        if (error != OT_SUCCESS) {
+          printf("Error saving grayscale image: %s\n", ot_error_string(error));
+        } else {
+          printf("Grayscale image saved as grayscale.png\n");
+        }
       }
     }
+    free(log_picture);
   }
 
-  error = extract_edges(grayscale_picture, edge_picture, width, height, options.edge_threshold);
+  error = extract_edges(edge_picture, grayscale_picture, width, height, options.edge_threshold);
   if (error != OT_SUCCESS) {
     printf("Error in edge detection: %s\n", ot_error_string(error));
     free(grayscale_picture);
     free(edge_picture);
-    free(log_picture);
     free(picture);
     return 1;
   }
   
   if (options.save_edges) {
-    error = bw_to_rgba(edge_picture, &log_picture, width, height);
-    if (error != OT_SUCCESS) {
-      printf("Error saving edges image: %s\n", ot_error_string(error));
+    unsigned char* log_picture = (unsigned char*)malloc(4 * width * height * sizeof(unsigned char));
+    if (!log_picture) {
+      printf("Error saving grayscale image: Memory allocation failed\n");
     } else {
-      error = write_png("edges.png", log_picture, width, height);
+      error = bw_to_rgba(log_picture, edge_picture, width, height);
       if (error != OT_SUCCESS) {
         printf("Error saving edges image: %s\n", ot_error_string(error));
       } else {
-        printf("Edges image saved as edges.png\n");
+        error = write_png(log_picture, width, height, "edges.png");
+        if (error != OT_SUCCESS) {
+          printf("Error saving edges image: %s\n", ot_error_string(error));
+        } else {
+          printf("Edges image saved as edges.png\n");
+        }
       }
     }
+    free(log_picture);
   }
 
-  error = find_components(edge_picture, components, width, height, options.max_components, &components_count, options.min_component_size, options.max_component_size, areas, 9);
+  error = find_components(components, &components_count, areas, edge_picture, width, height, options.max_components, options.min_component_size, options.max_component_size, areas_count);
   if (error != OT_SUCCESS) {
     printf("Error finding components: %s\n", ot_error_string(error));
     free(grayscale_picture);
     free(edge_picture);
-    free(log_picture);
     free(picture);
     return 1;
   }
 
   printf("Found %u components\n", components_count);
   
-  for (i = 0; i < (int)components_count; i++) {
+  for (i = 0; i < components_count; i++) {
   component_t c = components[i];
   int cx = c.center_x;
   int cy = c.center_y;
@@ -240,12 +241,11 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  error = write_png(options.output_file, picture, width, height);
+  error = write_png(picture, width, height, options.output_file);
   if (error != OT_SUCCESS) {
     printf("Error saving output: %s\n", ot_error_string(error));
     free(grayscale_picture);
     free(edge_picture);
-    free(log_picture);
     free(picture);
     return 1;
   }

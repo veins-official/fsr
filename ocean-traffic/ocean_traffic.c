@@ -62,6 +62,14 @@ static int sobel_gradient(const unsigned char* gray, int x, int y, int width, in
   return sqrt(gx * gx + gy * gy);
 }
 
+static int coords_in_areas(unsigned int areas[][AREA_RECT_COORDS], unsigned int areas_count, unsigned int x, unsigned int y) {
+  int result = 0;
+  for (unsigned int i = 0; !result && i < areas_count; i++) {
+    result = x >= areas[i][0] && x <= areas[i][2] && y >= areas[i][1] && y <= areas[i][3];
+  }
+  return result;
+}
+
 ot_error_t ot_error_from_lodepng(unsigned int lodepng_error) {
   switch (lodepng_error) {
     case 0:  return OT_SUCCESS;
@@ -141,14 +149,20 @@ const char* ot_error_string(ot_error_t error) {
   }
 }
 
-ot_error_t load_png(unsigned char** dest, const char* filename, unsigned int* width, unsigned int* height) {
+ot_error_t load_png(unsigned char** dest,
+                    unsigned int* width,
+                    unsigned int* height,
+                    const char* filename) {
   int error;
   if (!filename || !width || !height) return OT_ERR_NULL_POINTER;
   error = lodepng_decode32_file(dest, width, height, filename);
   return ot_error_from_lodepng(error);
 }
 
-ot_error_t write_png(const char* filename, const unsigned char* image, unsigned int width, unsigned int height) {
+ot_error_t write_png(const unsigned char* image,
+                     unsigned int width,
+                     unsigned int height,
+                     const char* filename) {
   unsigned char* png = NULL;
   long unsigned int pngsize;
   int error;
@@ -165,7 +179,33 @@ ot_error_t write_png(const char* filename, const unsigned char* image, unsigned 
   return OT_SUCCESS;
 }
 
-ot_error_t grayscale(const unsigned char* src, unsigned char* dest, unsigned int width, unsigned int height, double red_factor, double green_factor, double blue_factor) {
+ot_error_t bw_to_rgba(unsigned char* dest,
+                      const unsigned char* src,
+                      unsigned int width,
+                      unsigned int height) {
+  if (!src) return OT_ERR_NULL_POINTER;
+  if (!dest) return OT_ERR_INVALID_PARAM;
+  
+  for (unsigned int i = 0; i < height; i++) {
+    for (unsigned int j = 0; j < width; j++) {
+      unsigned char color = src[i * width + j];
+      unsigned int index = (i * width + j) * 4;
+      dest[index    ] = color;
+      dest[index + 1] = color;
+      dest[index + 2] = color;
+      dest[index + 3] = 255;
+    }
+  }
+  return OT_SUCCESS;
+}
+
+ot_error_t grayscale(unsigned char* dest,
+                     const unsigned char* src,
+                     unsigned int width,
+                     unsigned int height,
+                     double red_factor,
+                     double green_factor,
+                     double blue_factor) {
   unsigned int pngsize;
   if (!src || !dest) return OT_ERR_NULL_POINTER;
 
@@ -183,7 +223,15 @@ ot_error_t grayscale(const unsigned char* src, unsigned char* dest, unsigned int
 }
 
 #ifdef OCEAN_TRAFFIC_BLUR
-ot_error_t gaussian_blur(const unsigned char* src, unsigned char* dest, unsigned int width, unsigned int height, double w_center, double w_cross, double w_corner) {
+#include <string.h>
+
+ot_error_t gaussian_blur(unsigned char* dest,
+                         const unsigned char* src,
+                         unsigned int width,
+                         unsigned int height,
+                         double w_center,
+                         double w_cross,
+                         double w_corner) {
   if (!src || !dest) return OT_ERR_NULL_POINTER;
   if (width < 3 || height < 3) return OT_ERR_INVALID_SIZE;
 
@@ -218,7 +266,11 @@ ot_error_t gaussian_blur(const unsigned char* src, unsigned char* dest, unsigned
 }
 #endif
 
-ot_error_t extract_edges(const unsigned char* src, unsigned char* dest, unsigned int width, unsigned int height, unsigned int threshold) {
+ot_error_t extract_edges(unsigned char* dest,
+                         const unsigned char* src,
+                         unsigned int width,
+                         unsigned int height,
+                         unsigned int threshold) {
   if (!src || !dest) return OT_ERR_NULL_POINTER;
 
   for (unsigned int y = 0; y < height; y++) {
@@ -230,23 +282,15 @@ ot_error_t extract_edges(const unsigned char* src, unsigned char* dest, unsigned
   return OT_SUCCESS;
 }
 
-static int coords_in_areas(unsigned int areas[][4], unsigned int areas_count, unsigned int x, unsigned int y) {
-  int result = 0;
-  for (unsigned int i = 0; !result && i < areas_count; i++) {
-    result = x >= areas[i][0] && x <= areas[i][2] && y >= areas[i][1] && y <= areas[i][3];
-  }
-  return result;
-}
-
-ot_error_t find_components(const unsigned char* src,
-                           component_t* components,
+ot_error_t find_components(component_t* components,
+                           unsigned int* components_count,
+                           unsigned int areas[][AREA_RECT_COORDS],
+                           const unsigned char* src,
                            unsigned int width,
                            unsigned int height,
                            unsigned int max_components_count,
-                           unsigned int* components_count,
                            unsigned int min_components_size,
                            unsigned int max_components_size,
-                           unsigned int areas[][4],
                            unsigned int areas_count) {
   unsigned int local_components_count = 0;
   unsigned char* visited;
@@ -314,26 +358,6 @@ ot_error_t find_components(const unsigned char* src,
   *components_count = local_components_count;
   queue_free(queue);
   free(visited);
-  return OT_SUCCESS;
-}
-
-ot_error_t bw_to_rgba(const unsigned char* src, unsigned char** dest, unsigned int width, unsigned int height) {
-  if (!src) return OT_ERR_NULL_POINTER;
-  if (!dest) return OT_ERR_INVALID_PARAM;
-  
-  *dest = malloc(4 * width * height * sizeof(unsigned char));
-  if (!*dest) return OT_ERR_MEMORY_ALLOC;
-  
-  for (unsigned int i = 0; i < height; i++) {
-    for (unsigned int j = 0; j < width; j++) {
-      unsigned char color = src[i * width + j];
-      unsigned int index = (i * width + j) * 4;
-      (*dest)[index    ] = color;
-      (*dest)[index + 1] = color;
-      (*dest)[index + 2] = color;
-      (*dest)[index + 3] = 255;
-    }
-  }
   return OT_SUCCESS;
 }
 

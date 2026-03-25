@@ -1,6 +1,8 @@
 #ifndef OCEAN_TRAFFIC_H
 #define OCEAN_TRAFFIC_H
 
+#define AREA_RECT_COORDS 4
+
 #ifndef OCEAN_TRAFFIC_NO_BLUR
 /* pass -DOCEAN_TRAFFIC_NO_BLUR to the compiler to disable gaussian blur */
 #define OCEAN_TRAFFIC_BLUR
@@ -50,31 +52,59 @@ ot_error_t ot_error_from_lodepng(unsigned int lodepng_error);
 
 const char* ot_error_string(ot_error_t error);
 
-ot_error_t load_png(unsigned char** dest, const char* filename, unsigned int* width, unsigned int* height);
-ot_error_t write_png(const char* filename, const unsigned char* image, unsigned int width, unsigned int height);
-ot_error_t bw_to_rgba(const unsigned char* src, unsigned char** dest, unsigned int width, unsigned int height);
+ot_error_t load_png(unsigned char** dest,
+                    unsigned int* width,
+                    unsigned int* height,
+                    const char* filename);
+                    
+ot_error_t write_png(const unsigned char* image,
+                     unsigned int width,
+                     unsigned int height,
+                     const char* filename);
 
-/* unsafe: does not check the size of dest */
-ot_error_t grayscale(const unsigned char* src, unsigned char* dest, unsigned int width, unsigned int height, double red_factor, double green_factor, double blue_factor);
+/* dest must be allocated with the size width * height * 4 */
+ot_error_t bw_to_rgba(unsigned char* dest,
+                      const unsigned char* src,
+                      unsigned int width,
+                      unsigned int height);
+
+/* dest must be allocated with the size width * height * 4 */
+ot_error_t grayscale(unsigned char* dest,
+                     const unsigned char* src,
+                     unsigned int width,
+                     unsigned int height,
+                     double red_factor,
+                     double green_factor,
+                     double blue_factor);
 
 #ifdef OCEAN_TRAFFIC_BLUR
-/* unsafe: does not check the size of dest */
-ot_error_t gaussian_blur(const unsigned char* src, unsigned char* dest, unsigned int width, unsigned int height, double w_center, double w_cross, double w_corner);
+/* dest must be allocated with the size width * height */
+ot_error_t gaussian_blur(unsigned char* dest,
+                         const unsigned char* src,
+                         unsigned int width,
+                         unsigned int height,
+                         double w_center,
+                         double w_cross,
+                         double w_corner);
 #endif
 
-/* unsafe: does not check the size of dest */
-ot_error_t extract_edges(const unsigned char* src, unsigned char* dest, unsigned int width, unsigned int height, unsigned int threshold);
+/* dest must be allocated with the size width * height */
+ot_error_t extract_edges(unsigned char* dest,
+                         const unsigned char* src,
+                         unsigned int width,
+                         unsigned int height,
+                         unsigned int threshold);
 
-/* unsafe: does not check the size of dest */
-ot_error_t find_components(const unsigned char* src,
-                           component_t* components,
+/* dest must be allocated with the size width * height */
+ot_error_t find_components(component_t* components,
+                           unsigned int* components_count,
+                           unsigned int areas[][AREA_RECT_COORDS],
+                           const unsigned char* src,
                            unsigned int width,
                            unsigned int height,
                            unsigned int max_components_count,
-                           unsigned int* components_count,
                            unsigned int min_components_size,
                            unsigned int max_components_size,
-                           unsigned int areas[][4],
                            unsigned int areas_count);
 
 #endif
