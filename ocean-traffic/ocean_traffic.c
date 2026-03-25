@@ -165,10 +165,6 @@ ot_error_t write_png(const char* filename, const unsigned char* image, unsigned 
   return OT_SUCCESS;
 }
 
-ot_error_t write_default_png(const unsigned char* image, unsigned int width, unsigned int height) {
-  return write_png(OT_DEFAULT_OUTPUT, image, width, height);
-}
-
 ot_error_t grayscale(const unsigned char* src, unsigned char* dest, unsigned int width, unsigned int height, double red_factor, double green_factor, double blue_factor) {
   unsigned int pngsize;
   if (!src || !dest) return OT_ERR_NULL_POINTER;
@@ -186,6 +182,7 @@ ot_error_t grayscale(const unsigned char* src, unsigned char* dest, unsigned int
   return OT_SUCCESS;
 }
 
+#ifdef OCEAN_TRAFFIC_BLUR
 ot_error_t gaussian_blur(const unsigned char* src, unsigned char* dest, unsigned int width, unsigned int height, double w_center, double w_cross, double w_corner) {
   if (!src || !dest) return OT_ERR_NULL_POINTER;
   if (width < 3 || height < 3) return OT_ERR_INVALID_SIZE;
@@ -219,6 +216,7 @@ ot_error_t gaussian_blur(const unsigned char* src, unsigned char* dest, unsigned
 
   return OT_SUCCESS;
 }
+#endif
 
 ot_error_t extract_edges(const unsigned char* src, unsigned char* dest, unsigned int width, unsigned int height, unsigned int threshold) {
   if (!src || !dest) return OT_ERR_NULL_POINTER;

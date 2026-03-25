@@ -1,7 +1,10 @@
 #ifndef OCEAN_TRAFFIC_H
 #define OCEAN_TRAFFIC_H
 
-#define OT_DEFAULT_OUTPUT "destination.png"
+#ifndef OCEAN_TRAFFIC_NO_BLUR
+/* pass -DOCEAN_TRAFFIC_NO_BLUR to the compiler to disable gaussian blur */
+#define OCEAN_TRAFFIC_BLUR
+#endif
 
 typedef enum {
   OT_SUCCESS             = 0,
@@ -49,13 +52,20 @@ const char* ot_error_string(ot_error_t error);
 
 ot_error_t load_png(unsigned char** dest, const char* filename, unsigned int* width, unsigned int* height);
 ot_error_t write_png(const char* filename, const unsigned char* image, unsigned int width, unsigned int height);
-ot_error_t write_default_png(const unsigned char* image, unsigned int width, unsigned int height);
 ot_error_t bw_to_rgba(const unsigned char* src, unsigned char** dest, unsigned int width, unsigned int height);
 
-/* Unsafe: does not check the size of dest */
+/* unsafe: does not check the size of dest */
 ot_error_t grayscale(const unsigned char* src, unsigned char* dest, unsigned int width, unsigned int height, double red_factor, double green_factor, double blue_factor);
+
+#ifdef OCEAN_TRAFFIC_BLUR
+/* unsafe: does not check the size of dest */
 ot_error_t gaussian_blur(const unsigned char* src, unsigned char* dest, unsigned int width, unsigned int height, double w_center, double w_cross, double w_corner);
+#endif
+
+/* unsafe: does not check the size of dest */
 ot_error_t extract_edges(const unsigned char* src, unsigned char* dest, unsigned int width, unsigned int height, unsigned int threshold);
+
+/* unsafe: does not check the size of dest */
 ot_error_t find_components(const unsigned char* src,
                            component_t* components,
                            unsigned int width,
