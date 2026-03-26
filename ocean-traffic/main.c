@@ -40,6 +40,7 @@ static void print_version(void) {
   printf("Copyright (C) 2026 Student of The Faculty of Space Research at Moscow State University\n");
   printf("License: MIT\n");
   printf("Author: Kholodov Ilya Alekseevich <seal0x1c3@gmail.com>\n");
+  printf("PER ASPERA AD ASTRA\n");
 }
 
 static int parse_options(int argc, char* argv[], program_options_t* options) {
