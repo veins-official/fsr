@@ -141,6 +141,10 @@ int main(int argc, char* argv[]) {
   }
   
   components = (component_t*)malloc(options.max_components * sizeof(component_t));
+  if (!components) {
+    printf("Memory allocation failed\n");
+    return 1;
+  }
 
   error = load_png(&picture, &width, &height, options.input_file);
   if (error != OT_SUCCESS) {
