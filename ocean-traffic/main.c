@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "ocean_traffic.h"
+#include "ocean_traffic_areas.h"
 
 typedef struct {
   char* input_file;
@@ -99,30 +100,41 @@ static int parse_options(int argc, char* argv[], program_options_t* options) {
   return 1;
 }
 
+static void draw_crosses(unsigned char* picture, component_t* components, unsigned int components_count, unsigned int width, unsigned int height) {
+  for (unsigned int i = 0; i < components_count; i++) {
+    component_t c = components[i];
+    int cx = c.center_x;
+    int cy = c.center_y;
+    int dy, dx;
+
+    for (dy = -2; dy <= 2; dy++) {
+      for (dx = -2; dx <= 2; dx++) {
+        if (dx == 0 || dy == 0) {
+          int x = cx + dx;
+          int y = cy + dy;
+          if (x >= 0 && (unsigned int)x < width && y >= 0 && (unsigned int)y < height) {
+            int index = y * width * 4 + x * 4;
+            picture[index] = 0;
+            picture[index + 1] = 255;
+            picture[index + 2] = 0;
+            picture[index + 3] = 255;
+          }
+        }
+      }
+    }
+  }
+}
+
 int main(int argc, char* argv[]) {
   program_options_t options;
   unsigned char* grayscale_picture = NULL;
+  unsigned char* output_picture = NULL;
   unsigned char* edge_picture = NULL;
   unsigned char* picture = NULL;
   component_t* components = NULL;
   unsigned int components_count;
   unsigned int width, height;
-  unsigned int areas_count = 9;
   ot_error_t error;
-  unsigned int i;
-  
-  unsigned int areas[][4] = {
-    {532,  24,  727, 287},
-    {577, 288, 1124, 637},
-    {526, 486,  584, 531},
-    {536, 531,  583, 563},
-    {566, 576,  582, 598},
-    {510, 337,  585, 412},
-    {509, 293,  564, 315},
-    {550, 312,  564, 330},
-    {505, 328,  550, 336}
-  };
-
 
   if (!parse_options(argc, argv, &options)) {
     return 1;
@@ -133,12 +145,25 @@ int main(int argc, char* argv[]) {
   error = load_png(&picture, &width, &height, options.input_file);
   if (error != OT_SUCCESS) {
     printf("Error loading image: %s\n", ot_error_string(error));
+    free(components);
     return 1;
   }
+  
+  output_picture = (unsigned char*)malloc(4 * width * height * sizeof(unsigned char));
+  if (!output_picture) {
+    printf("Memory allocation failed\n");
+    free(components);
+    free(picture);
+    return 1;
+  }
+  
+  memcpy(output_picture, picture, width * height * 4);
 
   grayscale_picture = (unsigned char*)malloc(width * height * sizeof(unsigned char));
   if (!grayscale_picture) {
     printf("Memory allocation failed\n");
+    free(output_picture);
+    free(components);
     free(picture);
     return 1;
   }
@@ -147,15 +172,19 @@ int main(int argc, char* argv[]) {
   if (!edge_picture) {
     printf("Memory allocation failed\n");
     free(grayscale_picture);
+    free(output_picture);
+    free(components);
     free(picture);
     return 1;
   }
 
-  error = grayscale(grayscale_picture, picture, width, height, 0.299, 0.587, 0.114);
+  error = grayscale(grayscale_picture, output_picture, width, height, 0.299, 0.587, 0.114);
   if (error != OT_SUCCESS) {
     printf("Error in grayscale conversion: %s\n", ot_error_string(error));
     free(grayscale_picture);
+    free(output_picture);
     free(edge_picture);
+    free(components);
     free(picture);
     return 1;
   }
@@ -184,7 +213,9 @@ int main(int argc, char* argv[]) {
   if (error != OT_SUCCESS) {
     printf("Error in edge detection: %s\n", ot_error_string(error));
     free(grayscale_picture);
+    free(output_picture);
     free(edge_picture);
+    free(components);
     free(picture);
     return 1;
   }
@@ -209,50 +240,38 @@ int main(int argc, char* argv[]) {
     free(log_picture);
   }
 
-  error = find_components(components, &components_count, areas, edge_picture, width, height, options.max_components, options.min_component_size, options.max_component_size, areas_count);
+  error = find_components(components, &components_count, areas, edge_picture, width, height, options.max_components, options.min_component_size, options.max_component_size, AREAS_COUNT);
   if (error != OT_SUCCESS) {
     printf("Error finding components: %s\n", ot_error_string(error));
     free(grayscale_picture);
+    free(output_picture);
     free(edge_picture);
+    free(components);
     free(picture);
     return 1;
   }
 
   printf("Found %u components\n", components_count);
   
-  for (i = 0; i < components_count; i++) {
-  component_t c = components[i];
-  int cx = c.center_x;
-  int cy = c.center_y;
-  int dy, dx;
+  draw_crosses(output_picture, components, components_count, width, height);
 
-    for (dy = -2; dy <= 2; dy++) {
-      for (dx = -2; dx <= 2; dx++) {
-        if (dx == 0 || dy == 0) {
-          int x = cx + dx;
-          int y = cy + dy;
-          if (x >= 0 && (unsigned int)x < width && y >= 0 && (unsigned int)y < height) {
-            int index = y * width * 4 + x * 4;
-            picture[index] = 0;
-            picture[index + 1] = 255;
-            picture[index + 2] = 0;
-            picture[index + 3] = 255;
-          }
-        }
-      }
-    }
-  }
-
-  error = write_png(picture, width, height, options.output_file);
+  error = write_png(output_picture, width, height, options.output_file);
   if (error != OT_SUCCESS) {
     printf("Error saving output: %s\n", ot_error_string(error));
     free(grayscale_picture);
+    free(output_picture);
     free(edge_picture);
+    free(components);
     free(picture);
     return 1;
   }
 
   printf("Output saved as %s\n", options.output_file);
+  free(grayscale_picture);
+  free(output_picture);
+  free(edge_picture);
+  free(components);
+  free(picture);
   return (error == OT_SUCCESS) ? 0 : 1;
 }
 

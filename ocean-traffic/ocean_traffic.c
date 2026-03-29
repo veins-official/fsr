@@ -183,8 +183,7 @@ ot_error_t bw_to_rgba(unsigned char* dest,
                       const unsigned char* src,
                       unsigned int width,
                       unsigned int height) {
-  if (!src) return OT_ERR_NULL_POINTER;
-  if (!dest) return OT_ERR_INVALID_PARAM;
+  if (!src || !dest) return OT_ERR_NULL_POINTER;
   
   for (unsigned int i = 0; i < height; i++) {
     for (unsigned int j = 0; j < width; j++) {

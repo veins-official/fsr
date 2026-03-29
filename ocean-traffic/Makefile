@@ -13,7 +13,7 @@ all: main.out
 
 main.out: main.o lodepng.o ocean_traffic.o
 
-main.o: main.c ocean_traffic.h
+main.o: main.c ocean_traffic.h ocean_traffic_areas.h
 ocean_traffic.o: ocean_traffic.c ocean_traffic.h lodepng.h
 	$(CC) -c $(CFLAGS) $(OCEAN_TRAFFIC_FLAGS) $<
 lodepng.o: lodepng.c lodepng.h
